@@ -1,44 +1,35 @@
 import time
 import cv2
-from PIL import ImageGrab
 import numpy as np
 from grabscreen import grab_screen
 from getkeys import key_check
 import sys
 import os
+from constants import IMAGE_WIDTH,IMAGE_HEIGHT,NUM_KEYS,W_VEC,A_VEC,S_VEC,D_VEC,WA_VEC,WD_VEC,SA_VEC,SD_VEC,NK_VEC
 
-w = [1,0,0,0,0,0,0,0,0]
-s = [0,1,0,0,0,0,0,0,0]
-a = [0,0,1,0,0,0,0,0,0]
-d = [0,0,0,1,0,0,0,0,0]
-wa = [0,0,0,0,1,0,0,0,0]
-wd = [0,0,0,0,0,1,0,0,0]
-sa = [0,0,0,0,0,0,1,0,0]
-sd = [0,0,0,0,0,0,0,1,0]
-nk = [0,0,0,0,0,0,0,0,1]
 
 def key_label(keys) :
 
     output = [0,0,0,0,0,0,0,0,0]
 
     if 'W' in keys and 'A' in keys:
-        output = wa
+        output = WA_VEC
     elif 'W' in keys and 'D' in keys:
-        output = wd
+        output = WD_VEC
     elif 'S' in keys and 'A' in keys:
-        output = sa
+        output = SA_VEC
     elif 'S' in keys and 'D' in keys:
-        output = sd
+        output = SD_VEC
     elif 'W' in keys:
-        output = w
+        output = W_VEC
     elif 'S' in keys:
-        output = s
+        output = S_VEC
     elif 'A' in keys:
-        output = a
+        output = A_VEC
     elif 'D' in keys:
-        output = d
+        output = D_VEC
     else:
-        output = nk
+        output = NK_VEC
     return output
 
 
@@ -53,7 +44,17 @@ def save_data(output_file,data):
 def main():
 
     output_dir = sys.argv[1]
-    file_num = 1
+    curr_files = [file[-5] for root,dirs,files in os.walk(output_dir,topdown=False) for file in files]
+    file_nums = []
+    for file_val in curr_files :
+        try :
+            file_nums.append(int(file_val))
+        except:
+            continue
+    if not file_nums :
+        file_num = 1
+    else :
+        file_num = max(file_nums) + 1
     frame_count = 0
     training_data = []
     paused = False
@@ -66,7 +67,7 @@ def main():
         start = time.time()
         if not paused:
             img = grab_screen((0,0,800,600))
-            img = cv2.resize(img,(400,300))
+            img = cv2.resize(img,(IMAGE_WIDTH,IMAGE_HEIGHT))
             keys = key_check()
             key_output = key_label(keys)
             training_data.append([img,key_output])
@@ -78,6 +79,7 @@ def main():
                     output_file = os.path.join(output_dir,f"training_data-{file_num}.npy")
                     save_data(output_file,training_data)
                     training_data = []
+                    file_num += 1
             # cv2.imshow("frame", img)
             end = time.time()
             print(f"Frame took {end-start} seconds")
